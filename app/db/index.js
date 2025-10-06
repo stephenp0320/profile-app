@@ -3,20 +3,32 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-let mongo_url = `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@${process.env.MONGO_HOST}:${process.env.MONGO_PORT}`;
-console.log(mongo_url)
+const {
+  MONGO_USER,
+  MONGO_PASS,
+  MONGO_HOST,
+  MONGO_PORT,
+  MONGO_DB = "user-account",
+  MONGO_AUTHSOURCE = "admin",
+} = process.env;
 
-mongoose.connect(mongo_url, {
-  dbName: "user-account",
-});
-const db = mongoose.connection;
+const mongoUrl =
+  `mongodb://${encodeURIComponent(MONGO_USER)}:${encodeURIComponent(MONGO_PASS)}` +
+  `@${MONGO_HOST}:${MONGO_PORT}/${MONGO_DB}?authSource=${MONGO_AUTHSOURCE}`;
 
-db.on("error", (err) => {
-  console.log(`database connection error: ${err}`);
-});
-db.on("disconnected", () => {
-  console.log("database disconnected");
-});
-db.once("open", () => {
-  console.log(`database connected to ${db.name} on ${db.host}`);
-});
+
+export async function connectDB() {
+  await mongoose.connect(mongoUrl, { serverSelectionTimeoutMS: 5000 });
+
+  const db = mongoose.connection;
+ 
+  db.on("error", (err) => {
+    console.log(`database connection error: ${err}`);
+  });
+  db.on("disconnected", () => {
+    console.log("database disconnected");
+  });
+  db.once("open", () => {
+    console.log(`database connected to ${db.name} on ${db.host}`);
+  });
+}
